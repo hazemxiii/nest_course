@@ -9,6 +9,7 @@ import Link from "next/link";
 export default function ProductsSection() {
   const session = useSession();
   const [sortType, setSortType] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const [priceRange, setPriceRange] = useState({
     min: 0,
@@ -38,6 +39,7 @@ export default function ProductsSection() {
   useEffect(() => {
     const fetch = async () => {
       setProducts(await getProducts());
+      setLoading(false);
     };
     fetch();
   }, []);
@@ -73,6 +75,10 @@ export default function ProductsSection() {
 
     setDisplayProducts(filtered);
   }, [products, sortType, priceRange, ratingRange]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
   return (
     <section className="mt-6 mb-12">
       <div className="flex items-center gap-2">
