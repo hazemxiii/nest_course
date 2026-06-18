@@ -1,9 +1,13 @@
+import { Product } from "@/models/product";
 import FilterButton from "./FilterButton";
 import ProductCard from "./ProductCard";
 import SortButton from "./SortButton";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 
-export default function ProductsSection({ products }: { products: Product[] }) {
+export default function ProductsSection() {
+  const session = useSession();
   const [sortType, setSortType] = useState<string | null>(null);
 
   const [priceRange, setPriceRange] = useState({
@@ -16,6 +20,7 @@ export default function ProductsSection({ products }: { products: Product[] }) {
     max: 5,
   });
 
+  const [products, setProducts] = useState<Product[]>([]);
   const [displayProducts, setDisplayProducts] = useState(products);
 
   const handleSortClick = (type: string) => {
@@ -29,6 +34,13 @@ export default function ProductsSection({ products }: { products: Product[] }) {
   const filterByRating = (range: { min: number; max: number }) => {
     setRatingRange(range);
   };
+
+  useEffect(() => {
+    const fetch = async () => {
+      setProducts(await getProducts());
+    };
+    fetch();
+  }, []);
 
   useEffect(() => {
     let filtered = products.filter(
@@ -87,9 +99,29 @@ export default function ProductsSection({ products }: { products: Product[] }) {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 ">
         {displayProducts.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard key={(product as any)._id} product={product} />
         ))}
       </div>
+      {!session.data && (
+        <Link
+          href={`${process.env.NEXT_PUBLIC_API_URL}/auth/signin`}
+          className="mt-4 block w-full rounded-lg bg-blue-500 px-4 py-2 text-center text-white hover:bg-blue-600"
+        >
+          Sign In to View All Products
+        </Link>
+      )}
     </section>
   );
+}
+
+async function getProducts(): Promise<Product[]> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, {
+      credentials: "include",
+    });
+    const data = await res.json();
+    return data.products;
+  } catch (e) {
+    return [];
+  }
 }
